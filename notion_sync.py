@@ -17,7 +17,7 @@ DB_IDS = {
     "住宿": "b76929d8ea0e4c3ebc9cb3b625b5f6f1",
     "景點": "262599c27dd64f98b366b3ed16e06e8c",
 }
-OUTPUT_HTML = "乾媽智囊團.html"
+OUTPUT_HTML = "index.html"
 # ==================
 
 HEADERS = {
