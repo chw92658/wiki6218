@@ -17,7 +17,7 @@ DB_IDS = {
     "住宿": "b76929d8ea0e4c3ebc9cb3b625b5f6f1",
     "景點": "262599c27dd64f98b366b3ed16e06e8c",
 }
-OUTPUT_HTML = "index.html"
+OUTPUT_HTML = "乾媽智囊團.html"
 # ==================
 
 HEADERS = {
@@ -323,42 +323,14 @@ def main():
         json.dump(db, f, ensure_ascii=False, indent=2)
     print("  ✓ 已儲存 db_latest.json")
 
-    # 5. 產生 HTML
-    # 讀取最新的 HTML 模板
-    import subprocess, sys
-    # 用 build3.py 產生，但替換資料部分
+    # 5. 產生 HTML（使用內建模板）
     print("\n  產生 HTML...")
-
-    # 讀現有 HTML 的 CSS/JS（從上次產生的 HTML 取出）
     try:
-        with open(OUTPUT_HTML, "r", encoding="utf-8") as f:
-            old_html = f.read()
-        # 取出 <style> 內容
-        css = re.search(r'<style>(.*?)</style>', old_html, re.DOTALL).group(1)
-        # 取出 <script> 內容（最後一個 script tag）
-        scripts = re.findall(r'<script(?! id| type)>(.*?)</script>', old_html, re.DOTALL)
-        js = scripts[-1] if scripts else ""
-        # 取出 body 結構（去掉 script/style/dbdata）
-        body = re.search(r'<body>(.*?)<script id="dbdata"', old_html, re.DOTALL).group(1)
-    except Exception as e:
-        print(f"  ⚠️  無法讀取現有 HTML：{e}")
-        print("  請確認 乾媽智囊團.html 在同一個資料夾")
+        from html_template import TEMPLATE
+        html = TEMPLATE.replace("__DATA__", db_json)
+    except ImportError:
+        print("  ⚠️  找不到 html_template.py，請確認檔案在同一個資料夾")
         return
-
-    html = f"""<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>乾媽智囊團</title>
-<style>{css}</style>
-</head>
-<body>
-{body}
-<script id="dbdata" type="application/json">{db_json}</script>
-<script>{js}</script>
-</body>
-</html>"""
 
     with open(OUTPUT_HTML, "w", encoding="utf-8") as f:
         f.write(html)
