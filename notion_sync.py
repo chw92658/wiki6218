@@ -16,8 +16,9 @@ DB_IDS = {
     "美食": "842af218833a4666ab11aece5765e04d",
     "住宿": "b76929d8ea0e4c3ebc9cb3b625b5f6f1",
     "景點": "262599c27dd64f98b366b3ed16e06e8c",
+    "團購": "8f604901c7744574a554c2592edf2c26",
 }
-OUTPUT_HTML = "乾媽智囊團.html"
+OUTPUT_HTML = "index.html"
 # ==================
 
 HEADERS = {
@@ -290,6 +291,65 @@ def get_html_template():
 # ===================================================
 #  主程式
 # ===================================================
+
+def fetch_gp():
+    """抓取團購行程表：待開團=未打勾 且 開團中=打勾"""
+    print("  抓取團購資料庫...")
+    pages = query_database(DB_IDS["團購"])
+    records = []
+    today = None
+    try:
+        from datetime import date
+        today = date.today()
+    except:
+        pass
+
+    for page in pages:
+        # 篩選：待開團=False 且 開團中=True
+        waiting = get_prop(page, "待開團", False)
+        active  = get_prop(page, "開團中", False)
+        if waiting or not active:
+            continue
+
+        name    = clean(get_prop(page, "項目"))
+        if not name:
+            name = clean(get_prop(page, "Name")) or clean(get_prop(page, "名稱")) or "（未命名）"
+
+        period  = clean(get_prop(page, "開團期間"))
+        url     = clean(get_prop(page, "網址"))
+
+        # 倒數天數
+        countdown = None
+        raw_cd = get_prop(page, "倒數天數")
+        if raw_cd is not None:
+            try:
+                countdown = int(float(str(raw_cd)))
+            except:
+                pass
+
+        # 若無倒數欄位，嘗試從開團期間結尾日期計算
+        if countdown is None and period and today:
+            import re as _re
+            dates = _re.findall(r"(\d{4})[/-](\d{1,2})[/-](\d{1,2})", period)
+            if dates:
+                try:
+                    from datetime import date as _date
+                    y,m,d = int(dates[-1][0]),int(dates[-1][1]),int(dates[-1][2])
+                    end_date = _date(y,m,d)
+                    countdown = (end_date - today).days
+                except:
+                    pass
+
+        records.append({
+            "name":      name,
+            "period":    period,
+            "countdown": countdown,
+            "url":       url,
+        })
+
+    print(f"    → {len(records)} 筆開團中")
+    return records
+
 def main():
     if not NOTION_TOKEN:
         print("❌ 錯誤：請設定 NOTION_TOKEN 環境變數")
@@ -309,14 +369,15 @@ def main():
     build_question_index(questions, food, hotel, spot)
 
     # 3. 組合資料
-    db = {"q": questions, "f": food, "h": hotel, "s": spot}
+    gp = fetch_gp()
+    db = {"q": questions, "f": food, "h": hotel, "s": spot, "gp": gp}
     db_json = json.dumps(db, ensure_ascii=False, separators=(",", ":"))
 
     # 確認沒有 </script> 破壞 HTML
     db_json = db_json.replace("</script>", "<\\/script>")
 
     print(f"\n  資料大小：{len(db_json)/1024:.1f} KB")
-    print(f"  問題：{len(questions)}，美食：{len(food)}，住宿：{len(hotel)}，景點：{len(spot)}")
+    print(f"  問題：{len(questions)}，美食：{len(food)}，住宿：{len(hotel)}，景點：{len(spot)}，團購：{len(gp)}")
 
     # 4. 儲存 JSON（備用）
     with open("db_latest.json", "w", encoding="utf-8") as f:
