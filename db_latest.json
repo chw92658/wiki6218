@@ -2096,19 +2096,6 @@
       "rqi": []
     },
     {
-      "q": "測試用",
-      "date": "2026-05-18",
-      "tags": [
-        "美食",
-        "台北"
-      ],
-      "top": false,
-      "food_count": 1,
-      "hotel_count": 1,
-      "spot_count": 1,
-      "rqi": []
-    },
-    {
       "q": "推薦 苗栗通霄美食",
       "date": "2026-04-24",
       "tags": [
@@ -25546,22 +25533,6 @@
     }
   ],
   "f": [
-    {
-      "name": "美食測試",
-      "city": "基隆",
-      "district": "中正區",
-      "review": "434",
-      "tags": [
-        "基隆"
-      ],
-      "google": "245",
-      "fb": null,
-      "ig": null,
-      "website": null,
-      "tiji": "測試用",
-      "cat": "A.小吃",
-      "qi": []
-    },
     {
       "name": "崇明新鮮牛肉湯",
       "city": "台南",
@@ -85852,21 +85823,6 @@
   ],
   "h": [
     {
-      "name": "住宿測試",
-      "city": "宜蘭",
-      "district": "三星鄉",
-      "review": null,
-      "tags": [
-        "宜蘭"
-      ],
-      "google": "434",
-      "fb": null,
-      "ig": null,
-      "website": null,
-      "tiji": "測試用",
-      "qi": []
-    },
-    {
       "name": "采寓halo house",
       "city": "台中",
       "district": "西屯區",
@@ -93594,19 +93550,6 @@
     }
   ],
   "s": [
-    {
-      "name": "景點測試",
-      "city": "苗栗",
-      "district": "大湖鄉",
-      "review": null,
-      "tags": [],
-      "google": null,
-      "fb": null,
-      "ig": null,
-      "website": null,
-      "tiji": "測試用",
-      "qi": []
-    },
     {
       "name": "追風奇幻島-麗寶樂園-Fun樂星球",
       "city": "台中",
