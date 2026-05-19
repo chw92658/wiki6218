@@ -388,7 +388,7 @@ def main():
     print("\n  產生 HTML...")
     try:
         from html_template import TEMPLATE
-        html = TEMPLATE.replace("__DATA__", db_json)
+        html = TEMPLATE.replace("DATA_PLACEHOLDER", db_json)
     except ImportError:
         print("  ⚠️  找不到 html_template.py，請確認檔案在同一個資料夾")
         return
