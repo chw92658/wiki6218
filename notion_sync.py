@@ -293,62 +293,62 @@ def get_html_template():
 # ===================================================
 
 def fetch_gp():
-    """抓取團購行程表：待開團=未打勾 且 開團中=打勾"""
+    """抓取團購行程表：待開團=未打勾，開團期間包含今天"""
     print("  抓取團購資料庫...")
     pages = query_database(DB_IDS["團購"])
     records = []
-    today = None
-    try:
-        from datetime import date
-        today = date.today()
-    except:
-        pass
+    from datetime import date
+    today = date.today()
+    today_str = today.isoformat()
 
     for page in pages:
-        # 篩選：待開團=False 且 開團中=True
         waiting = get_prop(page, "待開團", False)
-        active  = get_prop(page, "開團中", False)
-        if waiting or not active:
+        if waiting:
             continue
-
-        name    = clean(get_prop(page, "項目"))
-        if not name:
-            name = clean(get_prop(page, "Name")) or clean(get_prop(page, "名稱")) or "（未命名）"
-
-        period  = clean(get_prop(page, "開團期間"))
-        url     = clean(get_prop(page, "網址"))
-
+        name = clean(get_prop(page, "項目")) or clean(get_prop(page, "Name")) or "（未命名）"
+        # 開團期間
+        period_prop = page.get("properties", {}).get("開團期間", {})
+        period_start = None
+        period_end = None
+        if period_prop.get("type") == "date" and period_prop.get("date"):
+            period_start = period_prop["date"].get("start")
+            period_end = period_prop["date"].get("end") or period_start
+        # 篩選開團期間包含今天
+        if period_start and period_end:
+            if not (period_start <= today_str <= period_end):
+                continue
+        elif period_start:
+            if period_start != today_str:
+                continue
+        else:
+            continue
+        period_display = None
+        if period_start and period_end and period_start != period_end:
+            period_display = period_start + " ~ " + period_end
+        elif period_start:
+            period_display = period_start
         # 倒數天數
         countdown = None
-        raw_cd = get_prop(page, "倒數天數")
-        if raw_cd is not None:
+        try:
+            cd_raw = get_prop(page, "倒數天數")
+            if cd_raw is not None:
+                countdown = int(float(str(cd_raw)))
+        except:
+            pass
+        if countdown is None and period_end:
             try:
-                countdown = int(float(str(raw_cd)))
+                from datetime import date as _d
+                end = _d.fromisoformat(period_end)
+                countdown = (end - today).days
             except:
                 pass
+        url = clean(get_prop(page, "網址"))
+        records.append({"name": name, "period": period_display, "countdown": countdown, "url": url})
 
-        # 若無倒數欄位，嘗試從開團期間結尾日期計算
-        if countdown is None and period and today:
-            import re as _re
-            dates = _re.findall(r"(\d{4})[/-](\d{1,2})[/-](\d{1,2})", period)
-            if dates:
-                try:
-                    from datetime import date as _date
-                    y,m,d = int(dates[-1][0]),int(dates[-1][1]),int(dates[-1][2])
-                    end_date = _date(y,m,d)
-                    countdown = (end_date - today).days
-                except:
-                    pass
-
-        records.append({
-            "name":      name,
-            "period":    period,
-            "countdown": countdown,
-            "url":       url,
-        })
-
-    print(f"    → {len(records)} 筆開團中")
+    records.sort(key=lambda x: x["countdown"] if x["countdown"] is not None else 9999)
+    print(f"    -> {len(records)} 筆開團中")
     return records
+
 
 def main():
     if not NOTION_TOKEN:
