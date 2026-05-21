@@ -96,6 +96,26 @@ def get_prop(page, name, default=None):
             return ", ".join(t for t in texts if t) or default
     return default
 
+def get_prop_any(page, names, default=None):
+    for name in names:
+        value = get_prop(page, name, None)
+        if value not in (None, "", []):
+            return value
+    return default
+
+def relation_ids(page, name):
+    p = page.get("properties", {}).get(name)
+    if not p or p.get("type") != "relation":
+        return []
+    return [x.get("id", "") for x in p.get("relation", []) if x.get("id")]
+
+def relation_ids_any(page, names):
+    for name in names:
+        ids = relation_ids(page, name)
+        if ids:
+            return ids
+    return []
+
 def clean(text):
     """移除 notion 內部連結殘留"""
     if not text:
@@ -111,6 +131,13 @@ def extract_names(raw):
     cleaned = re.sub(r'\s*\(https://www\.notion\.so/[^)]*\)', '', str(raw))
     return [p.strip() for p in cleaned.split(",") if p.strip()]
 
+def title_for_relation_ids(ids, lookup):
+    return [lookup[x] for x in ids if x in lookup]
+
+def clean_text_prop_any(page, names):
+    value = get_prop_any(page, names)
+    return None if isinstance(value, list) else clean(value)
+
 def safe_int(v):
     try:
         return int(float(v))
@@ -125,7 +152,7 @@ def fetch_questions():
     pages = query_database(DB_IDS["問題"])
     records = []
     for page in pages:
-        q = clean(get_prop(page, "問題🔴"))
+        q = clean(get_prop_any(page, ["標題", "問題", "問題🔴", "Name"]))
         if not q:
             continue
         tags_raw = get_prop(page, "分類", "")
@@ -139,18 +166,26 @@ def fetch_questions():
         spot_list  = extract_names(get_prop(page, "景點清單", ""))
         related_q  = extract_names(get_prop(page, "相關問題", ""))
 
+        food_ids = relation_ids(page, "美食清單")
+        hotel_ids = relation_ids(page, "住宿清單")
+        spot_ids = relation_ids(page, "景點清單")
         records.append({
             "q":           q,
+            "page_id":     page.get("id"),
             "date":        clean(get_prop(page, "日期")),
             "tags":        tags,
             "top":         bool(get_prop(page, "置頂", False)),
-            "food_count":  safe_int(get_prop(page, "美食數", 0)),
-            "hotel_count": safe_int(get_prop(page, "住宿數", 0)),
-            "spot_count":  safe_int(get_prop(page, "景點數", 0)),
+            "food_count":  safe_int(get_prop(page, "美食數", len(food_ids))),
+            "hotel_count": safe_int(get_prop(page, "住宿數", len(hotel_ids))),
+            "spot_count":  safe_int(get_prop(page, "景點數", len(spot_ids))),
             "food_list":   food_list,
             "hotel_list":  hotel_list,
             "spot_list":   spot_list,
             "related_q":   related_q,
+            "food_ids":    food_ids,
+            "hotel_ids":   hotel_ids,
+            "spot_ids":    spot_ids,
+            "related_ids": relation_ids(page, "相關問題"),
         })
     # 置頂優先，再按日期降序
     tops     = [r for r in records if r["top"]]
@@ -164,7 +199,7 @@ def fetch_food():
     pages = query_database(DB_IDS["美食"])
     records = []
     for page in pages:
-        name = clean(get_prop(page, "名字🔴"))
+        name = clean(get_prop_any(page, ["名字", "名字🔴", "Name"]))
         if not name:
             continue
         # 從多選欄位抓縣市標籤
@@ -176,6 +211,7 @@ def fetch_food():
 
         records.append({
             "name":     name,
+            "page_id":  page.get("id"),
             "city":     city,
             "district": clean(get_prop(page, "行政區")),
             "review":   clean(get_prop(page, "心得")),
@@ -184,7 +220,8 @@ def fetch_food():
             "fb":       clean(get_prop(page, "FB")),
             "ig":       clean(get_prop(page, "IG")),
             "website":  clean(get_prop(page, "官網")),
-            "tiji":     clean(get_prop(page, "提及🟡")),
+            "tiji":     clean_text_prop_any(page, ["提及", "提及🟡"]),
+            "tiji_ids": relation_ids_any(page, ["提及", "提及🟡"]),
             "cat":      clean(get_prop(page, "類別")),
             "qi":       [],   # 由問題反查填入
         })
@@ -196,13 +233,14 @@ def fetch_hotel():
     pages = query_database(DB_IDS["住宿"])
     records = []
     for page in pages:
-        name = clean(get_prop(page, "名字🔴"))
+        name = clean(get_prop_any(page, ["名字", "名字🔴", "Name"]))
         if not name:
             continue
         city_tags = get_prop(page, "縣市", [])
         city = ", ".join(city_tags) if isinstance(city_tags, list) and city_tags else clean(str(city_tags))
         records.append({
             "name":     name,
+            "page_id":  page.get("id"),
             "city":     city,
             "district": clean(get_prop(page, "行政區")),
             "review":   clean(get_prop(page, "心得")),
@@ -211,7 +249,8 @@ def fetch_hotel():
             "fb":       clean(get_prop(page, "FB")),
             "ig":       clean(get_prop(page, "IG")),
             "website":  clean(get_prop(page, "官網")),
-            "tiji":     clean(get_prop(page, "提及🟡")),
+            "tiji":     clean_text_prop_any(page, ["提及", "提及🟡"]),
+            "tiji_ids": relation_ids_any(page, ["提及", "提及🟡"]),
             "qi":       [],
         })
     print(f"    → {len(records)} 筆")
@@ -222,13 +261,17 @@ def fetch_spot():
     pages = query_database(DB_IDS["景點"])
     records = []
     for page in pages:
-        name = clean(get_prop(page, "名字🔴"))
+        name = clean(get_prop_any(page, ["名字", "名字🔴", "Name"]))
         if not name:
             continue
         city_tags = get_prop(page, "縣市", [])
-        city = ", ".join(city_tags) if isinstance(city_tags, list) and city_tags else clean(str(city_tags))
+        if isinstance(city_tags, list):
+            city = ", ".join(city_tags) if city_tags else None
+        else:
+            city = clean(str(city_tags))
         records.append({
             "name":     name,
+            "page_id":  page.get("id"),
             "city":     city,
             "district": clean(get_prop(page, "行政區")),
             "review":   clean(get_prop(page, "心得")),
@@ -237,7 +280,8 @@ def fetch_spot():
             "fb":       clean(get_prop(page, "FB")),
             "ig":       clean(get_prop(page, "IG")),
             "website":  clean(get_prop(page, "官網")),
-            "tiji":     clean(get_prop(page, "提及🟡")),
+            "tiji":     clean_text_prop_any(page, ["提及", "提及🟡"]),
+            "tiji_ids": relation_ids_any(page, ["提及", "提及🟡"]),
             "qi":       [],
         })
     print(f"    → {len(records)} 筆")
@@ -246,11 +290,19 @@ def fetch_spot():
 def build_question_index(questions, food, hotel, spot):
     """把問題反查索引填入各店家的 qi 欄位"""
     q_index = {item["q"]: i for i, item in enumerate(questions)}
+    q_id_index = {item["page_id"]: i for i, item in enumerate(questions) if item.get("page_id")}
+    q_id_title = {item["page_id"]: item["q"] for item in questions if item.get("page_id")}
     food_map  = {x["name"]: x for x in food}
     hotel_map = {x["name"]: x for x in hotel}
     spot_map  = {x["name"]: x for x in spot}
+    food_id_map  = {x["page_id"]: x for x in food if x.get("page_id")}
+    hotel_id_map = {x["page_id"]: x for x in hotel if x.get("page_id")}
+    spot_id_map  = {x["page_id"]: x for x in spot if x.get("page_id")}
 
     for qi, rec in enumerate(questions):
+        rec["food_list"].extend(title_for_relation_ids(rec.get("food_ids", []), {x.get("page_id"): x["name"] for x in food if x.get("page_id")}))
+        rec["hotel_list"].extend(title_for_relation_ids(rec.get("hotel_ids", []), {x.get("page_id"): x["name"] for x in hotel if x.get("page_id")}))
+        rec["spot_list"].extend(title_for_relation_ids(rec.get("spot_ids", []), {x.get("page_id"): x["name"] for x in spot if x.get("page_id")}))
         for name in rec["food_list"]:
             if name in food_map and qi not in food_map[name]["qi"]:
                 food_map[name]["qi"].append(qi)
@@ -260,16 +312,32 @@ def build_question_index(questions, food, hotel, spot):
         for name in rec["spot_list"]:
             if name in spot_map and qi not in spot_map[name]["qi"]:
                 spot_map[name]["qi"].append(qi)
+        for item_id in rec.get("food_ids", []):
+            if item_id in food_id_map and qi not in food_id_map[item_id]["qi"]:
+                food_id_map[item_id]["qi"].append(qi)
+        for item_id in rec.get("hotel_ids", []):
+            if item_id in hotel_id_map and qi not in hotel_id_map[item_id]["qi"]:
+                hotel_id_map[item_id]["qi"].append(qi)
+        for item_id in rec.get("spot_ids", []):
+            if item_id in spot_id_map and qi not in spot_id_map[item_id]["qi"]:
+                spot_id_map[item_id]["qi"].append(qi)
 
     # 相關問題也轉成 index
     for rec in questions:
         rec["rqi"] = [q_index[q] for q in rec.get("related_q", []) if q in q_index]
+        rec["rqi"].extend(i for i in (q_id_index.get(qid) for qid in rec.get("related_ids", [])) if i is not None and i not in rec["rqi"])
         del rec["related_q"]
 
     # 刪掉用來建立索引的暫存欄位
     for rec in questions:
-        for k in ("food_list", "hotel_list", "spot_list"):
+        for k in ("food_list", "hotel_list", "spot_list", "food_ids", "hotel_ids", "spot_ids", "related_ids", "page_id"):
             rec.pop(k, None)
+    for arr in (food, hotel, spot):
+        for item in arr:
+            if item.get("tiji_ids") and not item.get("tiji"):
+                item["tiji"] = ", ".join(title_for_relation_ids(item["tiji_ids"], q_id_title)) or None
+            item.pop("tiji_ids", None)
+            item.pop("page_id", None)
 
 # ===================================================
 #  讀取 HTML 模板（從現有的 build3.py 取得樣式/JS）
@@ -384,14 +452,25 @@ def main():
         json.dump(db, f, ensure_ascii=False, indent=2)
     print("  ✓ 已儲存 db_latest.json")
 
-    # 5. 產生 HTML（使用內建模板）
+    # 5. 產生 HTML（優先使用目前 index.html 當模板，保留手動調整）
     print("\n  產生 HTML...")
-    try:
-        from html_template import TEMPLATE
-        html = TEMPLATE.replace("DATA_PLACEHOLDER", db_json)
-    except ImportError:
-        print("  ⚠️  找不到 html_template.py，請確認檔案在同一個資料夾")
-        return
+    html = None
+    if os.path.exists(OUTPUT_HTML):
+        with open(OUTPUT_HTML, "r", encoding="utf-8") as f:
+            html = re.sub(
+                r'<script id="dbdata" type="application/json">.*?</script>',
+                f'<script id="dbdata" type="application/json">{db_json}</script>',
+                f.read(),
+                count=1,
+                flags=re.DOTALL,
+            )
+    if html is None:
+        try:
+            from html_template import TEMPLATE
+            html = TEMPLATE.replace("DATA_PLACEHOLDER", db_json)
+        except ImportError:
+            print("  ⚠️  找不到 html_template.py，請確認檔案在同一個資料夾")
+            return
 
     with open(OUTPUT_HTML, "w", encoding="utf-8") as f:
         f.write(html)
