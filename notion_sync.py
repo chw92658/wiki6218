@@ -152,12 +152,9 @@ def fetch_questions():
             "spot_list":   spot_list,
             "related_q":   related_q,
         })
-    # 置頂優先，再按日期降序
-    tops     = [r for r in records if r["top"]]
-    non_tops = [r for r in records if not r["top"]]
-    non_tops.sort(key=lambda x: x["date"] or "", reverse=True)
-    print(f"    → {len(records)} 筆（其中 {len(tops)} 筆置頂）")
-    return tops + non_tops
+    records.sort(key=lambda x: x["date"] or "", reverse=True)
+    print(f"    → {len(records)} 筆")
+    return records
 
 def fetch_food():
     print("  抓取美食資料庫...")
@@ -174,19 +171,32 @@ def fetch_food():
         else:
             city = clean(str(city_tags))
 
+        # city_tags: from city-specific columns like 台北美食, 新北美食
+        props = page.get("properties", {})
+        city_tag_list = []
+        for col_name in props:
+            if col_name.endswith("美食"):
+                v = props[col_name]
+                if v and v.get("type") == "multi_select" and v.get("multi_select"):
+                    city_name = col_name.replace("美食", "")
+                    city_tag_list.append(city_name)
+        if not city_tag_list:
+            city_tag_list = city_tags if isinstance(city_tags, list) else []
+
         records.append({
-            "name":     name,
-            "city":     city,
-            "district": clean(get_prop(page, "行政區")),
-            "review":   clean(get_prop(page, "心得")),
-            "tags":     get_prop(page, "縣市", []) if isinstance(get_prop(page, "縣市", []), list) else [],
-            "google":   clean(get_prop(page, "google地圖")),
-            "fb":       clean(get_prop(page, "FB")),
-            "ig":       clean(get_prop(page, "IG")),
-            "website":  clean(get_prop(page, "官網")),
-            "tiji":     clean(get_prop(page, "提及🟡")),
-            "cat":      clean(get_prop(page, "類別")),
-            "qi":       [],   # 由問題反查填入
+            "name":      name,
+            "city":      city,
+            "city_tags": city_tag_list,
+            "district":  clean(get_prop(page, "行政區")),
+            "review":    clean(get_prop(page, "心得")),
+            "tags":      city_tags if isinstance(city_tags, list) else [],
+            "google":    clean(get_prop(page, "google地圖")),
+            "fb":        clean(get_prop(page, "FB")),
+            "ig":        clean(get_prop(page, "IG")),
+            "website":   clean(get_prop(page, "官網")),
+            "tiji":      clean(get_prop(page, "提及🟡")),
+            "cat":       clean(get_prop(page, "類別")),
+            "qi":        [],
         })
     print(f"    → {len(records)} 筆")
     return records
@@ -201,18 +211,28 @@ def fetch_hotel():
             continue
         city_tags = get_prop(page, "縣市", [])
         city = ", ".join(city_tags) if isinstance(city_tags, list) and city_tags else clean(str(city_tags))
+        props = page.get("properties", {})
+        city_tag_list = []
+        for col_name in props:
+            if col_name.endswith("住宿"):
+                v = props[col_name]
+                if v and v.get("type") == "multi_select" and v.get("multi_select"):
+                    city_tag_list.append(col_name.replace("住宿", ""))
+        if not city_tag_list:
+            city_tag_list = city_tags if isinstance(city_tags, list) else []
         records.append({
-            "name":     name,
-            "city":     city,
-            "district": clean(get_prop(page, "行政區")),
-            "review":   clean(get_prop(page, "心得")),
-            "tags":     city_tags if isinstance(city_tags, list) else [],
-            "google":   clean(get_prop(page, "google地圖")),
-            "fb":       clean(get_prop(page, "FB")),
-            "ig":       clean(get_prop(page, "IG")),
-            "website":  clean(get_prop(page, "官網")),
-            "tiji":     clean(get_prop(page, "提及🟡")),
-            "qi":       [],
+            "name":      name,
+            "city":      city,
+            "city_tags": city_tag_list,
+            "district":  clean(get_prop(page, "行政區")),
+            "review":    clean(get_prop(page, "心得")),
+            "tags":      city_tags if isinstance(city_tags, list) else [],
+            "google":    clean(get_prop(page, "google地圖")),
+            "fb":        clean(get_prop(page, "FB")),
+            "ig":        clean(get_prop(page, "IG")),
+            "website":   clean(get_prop(page, "官網")),
+            "tiji":      clean(get_prop(page, "提及🟡")),
+            "qi":        [],
         })
     print(f"    → {len(records)} 筆")
     return records
@@ -227,48 +247,67 @@ def fetch_spot():
             continue
         city_tags = get_prop(page, "縣市", [])
         city = ", ".join(city_tags) if isinstance(city_tags, list) and city_tags else clean(str(city_tags))
+        props = page.get("properties", {})
+        city_tag_list = []
+        for col_name in props:
+            if col_name.endswith("住宿"):
+                v = props[col_name]
+                if v and v.get("type") == "multi_select" and v.get("multi_select"):
+                    city_tag_list.append(col_name.replace("住宿", ""))
+        if not city_tag_list:
+            city_tag_list = city_tags if isinstance(city_tags, list) else []
         records.append({
-            "name":     name,
-            "city":     city,
-            "district": clean(get_prop(page, "行政區")),
-            "review":   clean(get_prop(page, "心得")),
-            "tags":     city_tags if isinstance(city_tags, list) else [],
-            "google":   clean(get_prop(page, "google地圖")),
-            "fb":       clean(get_prop(page, "FB")),
-            "ig":       clean(get_prop(page, "IG")),
-            "website":  clean(get_prop(page, "官網")),
-            "tiji":     clean(get_prop(page, "提及🟡")),
-            "qi":       [],
+            "name":      name,
+            "city":      city,
+            "city_tags": city_tag_list,
+            "district":  clean(get_prop(page, "行政區")),
+            "review":    clean(get_prop(page, "心得")),
+            "tags":      city_tags if isinstance(city_tags, list) else [],
+            "google":    clean(get_prop(page, "google地圖")),
+            "fb":        clean(get_prop(page, "FB")),
+            "ig":        clean(get_prop(page, "IG")),
+            "website":   clean(get_prop(page, "官網")),
+            "tiji":      clean(get_prop(page, "提及🟡")),
+            "qi":        [],
         })
     print(f"    → {len(records)} 筆")
     return records
 
 def build_question_index(questions, food, hotel, spot):
-    """把問題反查索引填入各店家的 qi 欄位"""
-    q_index = {item["q"]: i for i, item in enumerate(questions)}
-    food_map  = {x["name"]: x for x in food}
-    hotel_map = {x["name"]: x for x in hotel}
-    spot_map  = {x["name"]: x for x in spot}
+    """建立雙向索引：qi（店家→問題）和 fi/hi/si（問題→店家）"""
+    q_index   = {item["q"]: i for i, item in enumerate(questions)}
+    food_map  = {x["name"]: (i, x) for i, x in enumerate(food)}
+    hotel_map = {x["name"]: (i, x) for i, x in enumerate(hotel)}
+    spot_map  = {x["name"]: (i, x) for i, x in enumerate(spot)}
 
     for qi, rec in enumerate(questions):
-        for name in rec["food_list"]:
-            if name in food_map and qi not in food_map[name]["qi"]:
-                food_map[name]["qi"].append(qi)
-        for name in rec["hotel_list"]:
-            if name in hotel_map and qi not in hotel_map[name]["qi"]:
-                hotel_map[name]["qi"].append(qi)
-        for name in rec["spot_list"]:
-            if name in spot_map and qi not in spot_map[name]["qi"]:
-                spot_map[name]["qi"].append(qi)
+        fi_list, hi_list, si_list = [], [], []
+        for name in rec.get("food_list", []):
+            if name in food_map:
+                fi, fx = food_map[name]
+                fi_list.append(fi)
+                if qi not in fx["qi"]:
+                    fx["qi"].append(qi)
+        for name in rec.get("hotel_list", []):
+            if name in hotel_map:
+                hi, hx = hotel_map[name]
+                hi_list.append(hi)
+                if qi not in hx["qi"]:
+                    hx["qi"].append(qi)
+        for name in rec.get("spot_list", []):
+            if name in spot_map:
+                si, sx = spot_map[name]
+                si_list.append(si)
+                if qi not in sx["qi"]:
+                    sx["qi"].append(qi)
+        rec["fi"] = fi_list
+        rec["hi"] = hi_list
+        rec["si"] = si_list
 
-    # 相關問題也轉成 index
+    # 相關問題轉成 index
     for rec in questions:
         rec["rqi"] = [q_index[q] for q in rec.get("related_q", []) if q in q_index]
-        del rec["related_q"]
-
-    # 刪掉用來建立索引的暫存欄位
-    for rec in questions:
-        for k in ("food_list", "hotel_list", "spot_list"):
+        for k in ("related_q", "food_list", "hotel_list", "spot_list"):
             rec.pop(k, None)
 
 # ===================================================
