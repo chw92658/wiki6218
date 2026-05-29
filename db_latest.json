@@ -118035,26 +118035,50 @@
   "gp": [
     {
       "name": "【韓國LATIB】橄欖油檸檬飲",
-      "period": "2026-05-23 ~ 2026-05-28",
+      "period": "2026-05-23 ~ 2026-05-29",
       "countdown": 0,
       "url": "https://gbf.tw/xmjqa"
     },
     {
       "name": "果子禮高雄大樹爆水玉荷包",
       "period": "2026-05-02 ~ 2026-05-29",
-      "countdown": 1,
+      "countdown": 0,
       "url": "https://gbf.tw/u7p6h"
+    },
+    {
+      "name": "【日本青森】蘋果汁",
+      "period": "2026-05-29 ~ 2026-06-04",
+      "countdown": 6,
+      "url": "https://gbf.tw/mbkjy"
+    },
+    {
+      "name": "【MIGRATORY】極致涼感抱冰被/床包",
+      "period": "2026-05-29 ~ 2026-06-07",
+      "countdown": 9,
+      "url": "https://amashop.asia/kol/a00001d21260529lf"
+    },
+    {
+      "name": "【recolte】Cordless Bonne 無線萬用調理機",
+      "period": "2026-05-29 ~ 2026-06-07",
+      "countdown": 9,
+      "url": "https://amashop.asia/kol/a00001w58260529kw"
+    },
+    {
+      "name": "【ARTISAN】風扇系列",
+      "period": "2026-05-29 ~ 2026-06-07",
+      "countdown": 9,
+      "url": "https://amashop.asia/kol/a00001t75260601lf"
     },
     {
       "name": "果子禮屏東愛文芒果",
       "period": "2026-05-02 ~ 2026-06-10",
-      "countdown": 13,
+      "countdown": 12,
       "url": "https://gbf.tw/suamt"
     },
     {
       "name": "【Flexflow】拉鍊款測重旅行箱（長期團）",
       "period": "2023-02-20 ~ 2026-12-31",
-      "countdown": 217,
+      "countdown": 216,
       "url": "https://docs.google.com/forms/d/e/1FAIpQLSf00Jk_MeDqyEK2x6qUKuE7PfrLCLWqfYf7WlzpFR-0XOjI8Q/viewform"
     }
   ]
