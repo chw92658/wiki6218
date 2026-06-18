@@ -118056,38 +118056,50 @@
   "gp": [
     {
       "name": "POLAR負離子高速吹風機",
-      "period": "2026-06-11 ~ 2026-06-17",
-      "countdown": 0,
+      "period": "2026-06-11 ~ 2026-06-20",
+      "countdown": 2,
       "url": "https://gbf.tw/xxhbw"
     },
     {
-      "name": "【JWAY】吹風機/快充/旅行飛碟鍋",
-      "period": "2026-06-11 ~ 2026-06-17",
-      "countdown": 0,
-      "url": "https://gbf.tw/5fhsy"
+      "name": "【日本青森】蘋果汁",
+      "period": "2026-06-09 ~ 2026-06-21",
+      "countdown": 3,
+      "url": "https://gbf.tw/adr8h"
     },
     {
       "name": "MY CEll 全協議閃充行動電源",
       "period": "2026-06-13 ~ 2026-06-21",
-      "countdown": 4,
+      "countdown": 3,
       "url": "https://gbf.tw/kv7ly"
     },
     {
       "name": "【FUNY】小風扇",
       "period": "2026-06-09 ~ 2026-06-21",
-      "countdown": 4,
+      "countdown": 3,
       "url": "https://amashop.asia/kol/a00001c79260609lf"
+    },
+    {
+      "name": "BBLAB",
+      "period": "2026-06-02 ~ 2026-06-22",
+      "countdown": 4,
+      "url": "https://lihi3.me/MZebH"
+    },
+    {
+      "name": "籌碼K",
+      "period": "2026-06-18 ~ 2026-06-27",
+      "countdown": 9,
+      "url": "https://www.cmoney.tw/app/ItemContent.aspx?id=9212"
     },
     {
       "name": "果子禮夏雪芒果",
       "period": "2026-06-11 ~ 2026-06-27",
-      "countdown": 10,
+      "countdown": 9,
       "url": "https://gbf.tw/enben"
     },
     {
       "name": "【Flexflow】拉鍊款測重旅行箱（長期團）",
       "period": "2023-02-20 ~ 2026-12-31",
-      "countdown": 197,
+      "countdown": 196,
       "url": "https://docs.google.com/forms/d/e/1FAIpQLSf00Jk_MeDqyEK2x6qUKuE7PfrLCLWqfYf7WlzpFR-0XOjI8Q/viewform"
     }
   ]
